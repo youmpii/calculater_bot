@@ -1,3 +1,6 @@
+// Автор: youmpii
+// GitHub: https://github.com/youmpii
+
 const TelegramBot = require("node-telegram-bot-api");
 const calculator = require("advanced-calculator");
 const dotenv = require("dotenv");
@@ -10,8 +13,29 @@ const token = process.env.BOT_TOKEN;
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, { polling: true });
 
-let currentExpression = {};
-let calculationHistory = {};
+// Объекты для хранения текущих выражений и истории вычислений
+const currentExpression = {};
+const calculationHistory = {};
+
+// Функция для проверки, является ли сообщение математическим выражением
+function isMathExpression(message) {
+  // Регулярное выражение для поиска математических функций и операторов
+  const functionPattern = /\b(sin|cos|tan|ln|log|max|min|sqrt)\s*\(.*?\)|\b\d+\s*[\+\-\*/%\^]\s*\d+\b|\(.*?\)/;
+  
+  // Проверка на соответствие шаблонам
+  return functionPattern.test(message);
+}
+
+// Функция для добавления результата в историю вычислений
+function addToHistory(chatId, result) {
+  if (!calculationHistory[chatId]) {
+    calculationHistory[chatId] = [];
+  }
+  calculationHistory[chatId].push(result);
+  if (calculationHistory[chatId].length > 10) {
+    calculationHistory[chatId].shift();
+  }
+}
 
 // Обработчик для старта бота
 bot.onText(/\/start/, (msg) => {
@@ -21,10 +45,6 @@ bot.onText(/\/start/, (msg) => {
   bot.sendMessage(
     chatId,
     "Добро пожаловать в калькулятор! Введите команду в формате /calculate <выражение> для вычисления."
-  );
-  bot.sendMessage(
-    chatId,
-    "Этот бот позволяет выполнять математические вычисления. Используйте команды для взаимодействия."
   );
 });
 
@@ -36,28 +56,19 @@ bot.onText(/\/calculate (.+)/, (msg, match) => {
   try {
     const result = calculator.evaluate(expression);
     const calcResult = `${expression} = ${result}`;
-
-    // Сохраняем в историю
-    if (!calculationHistory[chatId]) {
-      calculationHistory[chatId] = [];
-    }
-    calculationHistory[chatId].push(calcResult);
-    if (calculationHistory[chatId].length > 10) {
-      calculationHistory[chatId].shift();
-    }
-
+    addToHistory(chatId, calcResult);
     bot.sendMessage(chatId, calcResult);
   } catch (error) {
     bot.sendMessage(chatId, `Ошибка: ${error.message}`);
   }
 });
 
-// Добавляем обработчик команды /help для калькулятора
-bot.onText(/\/calchеlp/, (msg) => {
+// Добавляем обработчик команды /calchelp для калькулятора
+bot.onText(/\/calchelp/, (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(
-    chatId,
-    `Калькулятор поддерживает следующие операции:
+      chatId,
+      `Калькулятор поддерживает следующие операции:
         - Сложение: 2+2
         - Вычитание: 5-3
         - Умножение: 4*5
@@ -68,7 +79,8 @@ bot.onText(/\/calchеlp/, (msg) => {
         - Косинус: cos(π)
         - Тангенс: tan(π/4)
         
-        Пример использования: /calculate 2+2*3`
+        Пример использования: /calculate 2+2*3
+        Также можно использовать бота без команд, просто вводите выражения и получаете результат.`
   );
 });
 
@@ -96,5 +108,21 @@ bot.onText(/\/history/, (msg) => {
   } else {
     const historyMessage = history.join("\n");
     bot.sendMessage(chatId, `История вычислений:\n${historyMessage}`);
+  }
+});
+
+// Обработчик для всех сообщений
+bot.on('message', (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  if (isMathExpression(text)) {
+    try {
+      // Вычисление выражения
+      const result = calculator.evaluate(text);
+      bot.sendMessage(chatId, `Результат: ${result}`);
+    } catch (error) {
+      bot.sendMessage(chatId, 'Ошибка в вычислении выражения.');
+    }
   }
 });
