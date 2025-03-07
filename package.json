@@ -5,7 +5,7 @@
     "license": "ISC",
     "author": "youmpii",
     "type": "commonjs",
-    "main": "bot.js",
+    "main": "src/bot.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },

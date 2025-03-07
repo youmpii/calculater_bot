@@ -26,6 +26,13 @@ function isMathExpression(message) {
     return functionPattern.test(message);
 }
 
+// Обновленная функция для проверки, содержит ли выражение недопустимые символы в контексте математического выражения
+function isInvalidMathExpression(expression) {
+    // Регулярное выражение для проверки наличия цифр, операторов и недопустимых символов
+    const invalidPattern = /\d+[^0-9+\-*/%^().\s]+|[^0-9+\-*/%^().\s]+\d+/;
+    return invalidPattern.test(expression);
+}
+
 // Функция для добавления результата в историю вычислений
 function addToHistory(chatId, result) {
     if (!calculationHistory[chatId]) {
@@ -52,6 +59,12 @@ bot.onText(/\/start/, (msg) => {
 bot.onText(/\/calc (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
     let expression = match[1].replace(/\s+/g, ''); // Удаление пробелов
+
+    // Проверка на недопустимые символы в контексте математического выражения
+    if (isInvalidMathExpression(expression)) {
+        bot.sendMessage(chatId, 'Ошибка: выражение содержит недопустимые символы.');
+        return;
+    }
 
     try {
         const result = calculator.evaluate(expression);
@@ -92,7 +105,7 @@ bot.onText(/\/(h|help)/, (msg) => {
             '/start - Начать работу с ботом\n' +
             '/calc <выражение> - Вычислить математическое выражение\n' +
             '/calchelp - Помощь по использованию калькулятора\n' +
-            '/history - Показать историю вычислений\n' +
+            '/his|/history - Показать историю вычислений\n' +
             '/clear - Очистить историю вычислений\n' +
             '/h|/help - Показать список команд'
     );
@@ -129,6 +142,12 @@ bot.on('message', (msg) => {
 
     // Проверка, что сообщение не является командой
     if (!msg.text.startsWith('/')) {
+        // Проверка на недопустимые символы в контексте математического выражения
+        if (isInvalidMathExpression(text)) {
+            bot.sendMessage(chatId, 'Ошибка: выражение содержит недопустимые символы.');
+            return;
+        }
+
         if (isMathExpression(text)) {
             try {
                 const result = calculator.evaluate(text);
