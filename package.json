@@ -1,0 +1,21 @@
+{
+  "name": "calculatorbot",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node-telegram-bot-api": "^0.64.7"
+  },
+  "dependencies": {
+    "advanced-calculator": "^1.1.1",
+    "dotenv": "^16.4.7",
+    "gpt4js": "^1.7.8",
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}

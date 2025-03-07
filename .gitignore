@@ -1,0 +1,19 @@
+# Node.js
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Environment variables
+.env
+
+# MacOS
+.DS_Store
+
+# Misc
+*.swp
+*.swo
+*.bak
+*.tmp 
