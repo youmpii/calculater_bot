@@ -78,11 +78,11 @@ bot.onText(/\/\?/, (msg) => {
   bot.sendMessage(
     chatId,
     "Список доступных команд:\n" +
-    "/start - Начать работу с ботом\n" +
-    "/calculate <выражение> - Вычислить математическое выражение\n" +
-    "/calchеlp - Помощь по использованию калькулятора\n" +
-    "/history - Показать историю вычислений\n" +
-    "/? - Показать список команд"
+      "/start - Начать работу с ботом\n" +
+      "/calculate <выражение> - Вычислить математическое выражение\n" +
+      "/calchеlp - Помощь по использованию калькулятора\n" +
+      "/history - Показать историю вычислений\n" +
+      "/? - Показать список команд"
   );
 });
 
@@ -94,9 +94,7 @@ bot.onText(/\/history/, (msg) => {
   if (history.length === 0) {
     bot.sendMessage(chatId, "История вычислений пуста.");
   } else {
-    const historyMessage = history.join('\n');
+    const historyMessage = history.join("\n");
     bot.sendMessage(chatId, `История вычислений:\n${historyMessage}`);
   }
 });
-
-

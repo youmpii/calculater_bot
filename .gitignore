@@ -8,9 +8,8 @@ npm-debug.log*
 
 # Environment variables
 .env
-
-# MacOS
-.DS_Store
+.prettierrc
+.jsconfig.json
 
 # Misc
 *.swp
