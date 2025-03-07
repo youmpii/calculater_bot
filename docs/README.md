@@ -6,7 +6,7 @@
 
 1. Клонируйте репозиторий:
    ```bash
-   git clone <URL вашего репозитория>
+   git clone <https://github.com/youmpii/calculater_bot>
    ```
 
 2. Перейдите в директорию проекта:
