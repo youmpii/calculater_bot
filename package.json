@@ -1,9 +1,9 @@
 {
     "name": "calculatorbot",
     "version": "1.0.0",
-    "description": "",
+    "description": "Calculator bot",
     "license": "ISC",
-    "author": "",
+    "author": "youmpii",
     "type": "commonjs",
     "main": "bot.js",
     "scripts": {

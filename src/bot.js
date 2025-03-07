@@ -7,10 +7,9 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// replace the value below with the Telegram token you receive from @BotFather
 const token = process.env.BOT_TOKEN;
 
-// Create a bot that uses 'polling' to fetch new updates
+// Создаем бота, который использует 'polling' для получения новых обновлений
 const bot = new TelegramBot(token, { polling: true });
 
 // Объекты для хранения текущих выражений и истории вычислений
@@ -38,7 +37,7 @@ function addToHistory(chatId, result) {
     }
 }
 
-// Обработчик для старта бота
+// Обработчик для команды /start
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
     currentExpression[chatId] = '';
@@ -49,22 +48,22 @@ bot.onText(/\/start/, (msg) => {
     );
 });
 
-// Обработчик для команды /calculate
-bot.onText(/\/calculate (.+)/, (msg, match) => {
+// Обработчик для команды /calc
+bot.onText(/\/calc (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
-    const expression = match[1];
+    let expression = match[1].replace(/\s+/g, ''); // Удаление пробелов
 
     try {
         const result = calculator.evaluate(expression);
         const calcResult = `${expression} = ${result}`;
         addToHistory(chatId, calcResult);
-        bot.sendMessage(chatId, calcResult);
+        bot.sendMessage(chatId, `Результат: ${result}`);
     } catch (error) {
         bot.sendMessage(chatId, `Ошибка: ${error.message}`);
     }
 });
 
-// Добавляем обработчик команды /calchelp для калькулятора
+// Добавляем обработчик команды /calchelp
 bot.onText(/\/calchelp/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(
@@ -84,45 +83,61 @@ bot.onText(/\/calchelp/, (msg) => {
     );
 });
 
-// Обработчик для команды /?
-bot.onText(/\/\?/, (msg) => {
+// Обработчик для команды /help
+bot.onText(/\/(h|help)/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(
         chatId,
         'Список доступных команд:\n' +
             '/start - Начать работу с ботом\n' +
-            '/calculate <выражение> - Вычислить математическое выражение\n' +
+            '/calc <выражение> - Вычислить математическое выражение\n' +
             '/calchelp - Помощь по использованию калькулятора\n' +
             '/history - Показать историю вычислений\n' +
-            '/? - Показать список команд'
+            '/clear - Очистить историю вычислений\n' +
+            '/h|/help - Показать список команд'
     );
+    // Удаление команды из истории сообщений
+    bot.removeTextListener(/\/(h|help)/);
 });
 
-// Обработчик для команды /history
-bot.onText(/\/history/, (msg) => {
+// Обработчик для команды /his|/history
+bot.onText(/\/(his|history)/, (msg) => {
     const chatId = msg.chat.id;
     const history = calculationHistory[chatId] || [];
 
     if (history.length === 0) {
         bot.sendMessage(chatId, 'История вычислений пуста.');
     } else {
-        const historyMessage = history.join('\n');
+        const historyMessage = history
+            .map((entry, index) => `${index + 1}: ${entry}`)
+            .join('\n');
         bot.sendMessage(chatId, `История вычислений:\n${historyMessage}`);
     }
+});
+
+// Обработчик для команды /clear
+bot.onText(/\/clear/, (msg) => {
+    const chatId = msg.chat.id;
+    calculationHistory[chatId] = [];
+    bot.sendMessage(chatId, 'История вычислений очищена.');
 });
 
 // Обработчик для всех сообщений
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
-    const text = msg.text;
+    const text = msg.text.replace(/\s+/g, '');
 
-    if (isMathExpression(text)) {
-        try {
-            // Вычисление выражения
-            const result = calculator.evaluate(text);
-            bot.sendMessage(chatId, `Результат: ${result}`);
-        } catch (error) {
-            bot.sendMessage(chatId, 'Ошибка в вычислении выражения.');
+    // Проверка, что сообщение не является командой
+    if (!msg.text.startsWith('/')) {
+        if (isMathExpression(text)) {
+            try {
+                const result = calculator.evaluate(text);
+                const calcResult = `${text} = ${result}`;
+                addToHistory(chatId, calcResult);
+                bot.sendMessage(chatId, `Результат: ${result}`);
+            } catch (error) {
+                bot.sendMessage(chatId, 'Ошибка в вычислении выражения.');
+            }
         }
     }
 });
