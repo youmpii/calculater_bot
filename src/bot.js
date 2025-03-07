@@ -26,6 +26,13 @@ function isMathExpression(message) {
     return functionPattern.test(message);
 }
 
+// Обновленная функция для проверки, содержит ли выражение недопустимые символы в контексте математического выражения
+function isInvalidMathExpression(expression) {
+    // Регулярное выражение для проверки наличия цифр, операторов и недопустимых символов, включая запятую
+    const invalidPattern = /\d+[^0-9+\-*/%^().,\s]+|[^0-9+\-*/%^().,\s]+\d+/;
+    return invalidPattern.test(expression);
+}
+
 // Функция для добавления результата в историю вычислений
 function addToHistory(chatId, result) {
     if (!calculationHistory[chatId]) {
@@ -35,6 +42,11 @@ function addToHistory(chatId, result) {
     if (calculationHistory[chatId].length > 10) {
         calculationHistory[chatId].shift();
     }
+}
+
+// Функция для преобразования градусов в радианы
+function degreesToRadians(degrees) {
+    return degrees * (Math.PI / 180);
 }
 
 // Обработчик для команды /start
@@ -48,18 +60,49 @@ bot.onText(/\/start/, (msg) => {
     );
 });
 
+// Обновленная функция для вычисления выражений с учетом радиан
+function evaluateExpression(expression) {
+    try {
+        // Преобразование выражения, чтобы использовать радианы
+        expression = expression.replace(/sin\(([^)]+)\)/g, (match, p1) => `sin(${degreesToRadians(parseFloat(p1))})`);
+        expression = expression.replace(/cos\(([^)]+)\)/g, (match, p1) => `cos(${degreesToRadians(parseFloat(p1))})`);
+        expression = expression.replace(/tan\(([^)]+)\)/g, (match, p1) => `tan(${degreesToRadians(parseFloat(p1))})`);
+        
+        // Добавление поддержки логарифмов
+        expression = expression.replace(/log\(([^,]+),([^)]+)\)/g, (match, a, b) => `log(${a})/log(${b})`);
+        expression = expression.replace(/ln\(([^)]+)\)/g, (match, p1) => `ln(${p1})`);
+        
+        const result = calculator.evaluate(expression);
+
+        // Округление только для тригонометрических функций
+        if (/sin|cos|tan/.test(expression)) {
+            return parseFloat(result.toFixed(2));
+        }
+
+        return result;
+    } catch (error) {
+        throw new Error('Ошибка в вычислении выражения.');
+    }
+}
+
 // Обработчик для команды /calc
 bot.onText(/\/calc (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
     let expression = match[1].replace(/\s+/g, ''); // Удаление пробелов
 
+    // Проверка на недопустимые символы в контексте математического выражения
+    if (isInvalidMathExpression(expression)) {
+        bot.sendMessage(chatId, 'Ошибка: выражение содержит недопустимые символы.');
+        return;
+    }
+
     try {
-        const result = calculator.evaluate(expression);
+        const result = evaluateExpression(expression);
         const calcResult = `${expression} = ${result}`;
         addToHistory(chatId, calcResult);
         bot.sendMessage(chatId, `Результат: ${result}`);
     } catch (error) {
-        bot.sendMessage(chatId, `Ошибка: ${error.message}`);
+        bot.sendMessage(chatId, error.message);
     }
 });
 
@@ -129,14 +172,20 @@ bot.on('message', (msg) => {
 
     // Проверка, что сообщение не является командой
     if (!msg.text.startsWith('/')) {
+        // Проверка на недопустимые символы в контексте математического выражения
+        if (isInvalidMathExpression(text)) {
+            bot.sendMessage(chatId, 'Ошибка: выражение содержит недопустимые символы.');
+            return;
+        }
+
         if (isMathExpression(text)) {
             try {
-                const result = calculator.evaluate(text);
+                const result = evaluateExpression(text);
                 const calcResult = `${text} = ${result}`;
                 addToHistory(chatId, calcResult);
                 bot.sendMessage(chatId, `Результат: ${result}`);
             } catch (error) {
-                bot.sendMessage(chatId, 'Ошибка в вычислении выражения.');
+                bot.sendMessage(chatId, error.message);
             }
         }
     }
